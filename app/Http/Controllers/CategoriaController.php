@@ -46,7 +46,7 @@ class CategoriaController extends Controller
 
         try {
             $categoria = Categoria::create([
-                'nome'=>$request->get('nome')
+                'nome' => $request->input('nome')
             ]);
             
             return response()->json($categoria, 200);
