@@ -159,49 +159,39 @@ class ProdutoController extends Controller
     public function calcular_icms_produto(Request $request, $id){
         
         try {
-            $produto_id = Produto::find($id);
-            $categoria = $produto_id->categoria_id;
-            
-            $nome_categoria = Categoria::select('nome')
-                ->where('id', $categoria)
-                ->first();
+            $produto = Produto::find($id);
 
-            if(!$produto_id){
+            if(!$produto){
                 return response()->json(['mensagem' => 'Produto nao encontrado', 404]);
             }
+
+            $categoria = Categoria::find($produto->categoria_id);
+            
             if (!$categoria) {
                 return response()->json([
                     'message' => 'Categoria não encontrada para o produto'
                 ], 404);
             }
-                        
-            $aliquota_icms = Aliquota::where('categoria_id', $categoria)->first();
 
-            if(!$aliquota_icms){
-                return response()->json([
-                    'mensagem' => 'Alíquota de ICMS não encontrada para a categoria do produto'
-                ], 404);
+            $soma_aliquotas = 0;
+            $aliquotas = Aliquota::where('categoria_id', $produto->categoria_id)->get();
+
+            foreach ($aliquotas as $aliquota) {
+                $soma_aliquotas += $aliquota->aliquota;
             }
-
-            // $imposto = Imposto::select('nome')
-                // ->where('id', $aliquota_icms->imposto_id)
-                // ->first();
-            $imposto = Imposto::find($aliquota_icms->imposto_id);
     
-            // Convertendo a alíquota para formato decimal (0.05 -> 5%)
-            $icms = floatval($aliquota_icms->aliquota);
-            $calculo_icms = $produto_id->preco * $icms;
+            $calculo_icms = $produto->preco * ($soma_aliquotas / 100);
+            $produto_com_icms = $produto->preco + $calculo_icms;
+
 
             return response()->json([
-                'produto' => $produto_id->nome,
-                'preco' => $produto_id->preco,
-                'categoria' => $nome_categoria->nome,
-                'imposto' => $imposto ? $imposto->nome : 'Nenhum imposto encontrado',
-                'ICMS' => $calculo_icms
+                'produto' => $produto->nome,
+                'preco' => $produto->preco,
+                'categoria' => $categoria->nome,
+                'ICMS' => $soma_aliquotas .'%',
+                'preco_produto_atualizado' => $produto_com_icms
             ]);
             
-
-            // fazer uma forma de calcular todos os impostos vinculados à categoria do produto
             
         } catch (Exception $e) {
             return response()->json(['error' => 'Erro ao calcular o ICMS'], 500);
