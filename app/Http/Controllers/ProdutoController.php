@@ -174,10 +174,19 @@ class ProdutoController extends Controller
             }
 
             $soma_aliquotas = 0;
+            $impostos = [];
+
             $aliquotas = Aliquota::where('categoria_id', $produto->categoria_id)->get();
 
             foreach ($aliquotas as $aliquota) {
                 $soma_aliquotas += $aliquota->aliquota;
+
+                $imposto = Imposto::find($aliquota->imposto_id);
+
+                $impostos[] =[
+                    'nome' => $imposto->nome,
+                    'aliquota' => $aliquota->aliquota .'%'
+                ];
             }
     
             $calculo_icms = $produto->preco * ($soma_aliquotas / 100);
@@ -189,7 +198,8 @@ class ProdutoController extends Controller
                 'preco' => $produto->preco,
                 'categoria' => $categoria->nome,
                 'ICMS' => $soma_aliquotas .'%',
-                'preco_produto_atualizado' => $produto_com_icms
+                'preco_produto_atualizado' => $produto_com_icms,
+                'impostos' => $impostos,
             ]);
             
             
