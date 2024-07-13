@@ -16,10 +16,25 @@ class ProdutoController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $produtos = Produto::all();
-        return response()->json($produtos);
+        //listando produtos com a paginação, tendo limite de 10 produtos por página
+        $produtos = Produto::orderBy('nome')->paginate(10);
+
+
+        $produto = Produto::query();
+
+        $categoria = $request->input('categoria_id');
+        $preco_minimo = $request->input('preco_minimo');
+        $preco_maximo = $request->input('preco_maximo');
+
+            // Filtro por categoria e preço de produto
+        if ($categoria) {
+            $produto->where('categoria_id', $categoria)->whereBetween('preco', [$preco_minimo, $preco_maximo]);
+        }
+        $produto = $produto->paginate(5);
+
+        return response()->json($produto);
     }
 
     /**
@@ -188,7 +203,7 @@ class ProdutoController extends Controller
                     'aliquota' => $aliquota->aliquota .'%'
                 ];
             }
-    
+
             $calculo_icms = $produto->preco * ($soma_aliquotas / 100);
             $produto_com_icms = $produto->preco + $calculo_icms;
 
