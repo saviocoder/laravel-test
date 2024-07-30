@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
+
 class ProdutoController extends Controller
 {
     /**
@@ -24,13 +25,15 @@ class ProdutoController extends Controller
 
         $produto = Produto::query();
 
-        $categoria = $request->input('categoria_id');
+        $nome_categoria = $request->input('nome_categoria');
+        $categoria_id = Categoria::select('id')->where('nome', $nome_categoria);
+        
         $preco_minimo = $request->input('preco_minimo');
         $preco_maximo = $request->input('preco_maximo');
 
             // Filtro por categoria e preço de produto
-        if ($categoria) {
-            $produto->where('categoria_id', $categoria)->whereBetween('preco', [$preco_minimo, $preco_maximo]);
+        if ($categoria_id) {
+            $produto->where('categoria_id', $categoria_id)->whereBetween('preco', [$preco_minimo, $preco_maximo]);
         }
         $produto = $produto->paginate(5);
 
@@ -73,7 +76,7 @@ class ProdutoController extends Controller
                 'categoria_id' => $request->input('categoria_id')
             ]);
             
-            return response()->json($produto, 200);
+            return response()->json(['msg' => 'Produto adicionado com sucesso!'], 200);
         } catch (Exception $e) {
             return response()->json([
                 'message' => 'Erro ao criar o Produto',
